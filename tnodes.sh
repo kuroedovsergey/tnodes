@@ -14,7 +14,7 @@ function removeipaddr() {
 
 #Функция логгирования отключения серверов
 function logger_expire_server() {
-        echo -e "$(date '+%Y-%m-%d %H:%M:%S') -- Hostname $1 ($2) disabled!\n\tUsed\tAvailable\tParted\n\t$3\t\t$4\t/mnt/meta: $5%\n\t$6\t\t$7\t/mnt/meta1: $8%\n" >> $PATH_SCRIPT/log/tnodes.log
+        echo -e "$(date '+%Y-%m-%d %H:%M:%S') -- Hostname $1 ($2) disabled!\n\tUsed\tAvailable\tParted\n\t$3\t\t$4\t/mnt/sda: $5%\n\t$6\t\t$7\t/mnt/sda1: $8%\n" >> $PATH_SCRIPT/log/tnodes.log
 }
 
 #Проверка существования файла ipaddr.txt и создание директорий. (Первый запуск скрипта)
@@ -39,24 +39,24 @@ fi
 if [[ $COUNT_ROW -ge 1 ]]; then
         for IP in $(cat $PATH_SCRIPT/ipaddr.txt); do
                 #Подключение к удаленным серверам
-                ssh user@$IP "df -h | grep /mnt/meta | sort && hostname" > $PATH_SCRIPT/tmp/df_nodes.txt
+                ssh user@$IP "df -h | grep /mnt/sda | sort && hostname" > $PATH_SCRIPT/tmp/df_nodes.txt
 
 
                 HOSTNAME=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | tail -1)
-                META=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | head -1 | awk '{print $5}' | sed 's/.$//')
-                META1=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/meta1" | awk '{print $5}' | sed 's/.$//')
+                SDA=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | head -1 | awk '{print $5}' | sed 's/.$//')
+                SDA1=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/sda1" | awk '{print $5}' | sed 's/.$//')
 
                 #Объявление переменных для метрик
-                DF_REMOTE_META_SIZE=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | head -1 | awk '{print $2}')
-                DF_REMOTE_META_AVL=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | head -1 | awk '{print $4}')
-                DF_REMOTE_META_USED=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | head -1 | awk '{print $3}')
-                DF_REMOTE_META1_SIZE=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/meta1" | awk '{print $2}')
-                DF_REMOTE_META1_AVL=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/meta1" | awk '{print $4}')
-                DF_REMOTE_META1_USED=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/meta1" | awk '{print $3}')
+                DF_REMOTE_SDA_SIZE=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | head -1 | awk '{print $2}')
+                DF_REMOTE_SDA_AVL=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | head -1 | awk '{print $4}')
+                DF_REMOTE_SDA_USED=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | head -1 | awk '{print $3}')
+                DF_REMOTE_SDA1_SIZE=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/meta1" | awk '{print $2}')
+                DF_REMOTE_SDA1_AVL=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/meta1" | awk '{print $4}')
+                DF_REMOTE_SDA1_USED=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/meta1" | awk '{print $3}')
 
 
                 if [[ ! -z $META ]] && [[ ! -z $META1 ]]; then
-                        echo -e "$(date '+%Y-%m-%d %H:%M:%S') -- $HOSTNAME ($IP)\n\tSize\tUsed\tAvailable\tParted\n\t$DF_REMOTE_META_SIZE\t$DF_REMOTE_META_USED\t$DF_REMOTE_META_AVL\t\t/mnt/meta: $META%\n\t$DF_REMOTE_META1_SIZE\t$DF_REMOTE_META1_USED\t$DF_REMOTE_META1_AVL\t\t/mnt/meta1: $META1%\n" >> $PATH_SCRIPT/log/tnodes.log
+                        echo -e "$(date '+%Y-%m-%d %H:%M:%S') -- $HOSTNAME ($IP)\n\tSize\tUsed\tAvailable\tParted\n\t$DF_REMOTE_SDA_SIZE\t$DF_REMOTE_SDA_USED\t$DF_REMOTE_SDA_AVL\t\t/mnt/meta: $SDA%\n\t$DF_REMOTE_SDA1_SIZE\t$DF_REMOTE_SDA1_USED\t$DF_REMOTE_SDA1_AVL\t\t/mnt/meta1: $SDA1%\n" >> $PATH_SCRIPT/log/tnodes.log
                 else
                         removeipaddr $IP
                 fi
@@ -64,7 +64,7 @@ if [[ $COUNT_ROW -ge 1 ]]; then
 
                 if [[ $META -ge $MAX_DF_SIZE_PERCENT ]] || [[ $META1 -ge $MAX_DF_SIZE_PERCENT ]]; then
                         psql -h localhost -t -U $USER_DB -d $DB_SCHEME -c "UPDATE table_servers SET available = false WHERE ip = '$IP';" 2>&1 > /dev/null
-                        logger_expire_store $HOSTNAME $IP $DF_REMOTE_META_AVL $DF_REMOTE_META_USED $META $DF_REMOTE_META1_AVL $DF_REMOTE_META1_USED $META1
+                        logger_expire_store $HOSTNAME $IP $DF_REMOTE_SDA_AVL $DF_REMOTE_SDA_USED $SDA $DF_REMOTE_SDA1_AVL $DF_REMOTE_SDA1_USED $SDA1
                         removeipaddr $IP
                 fi
         done
