@@ -50,19 +50,19 @@ if [[ $COUNT_ROW -ge 1 ]]; then
                 DF_REMOTE_SDA_SIZE=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | head -1 | awk '{print $2}')
                 DF_REMOTE_SDA_AVL=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | head -1 | awk '{print $4}')
                 DF_REMOTE_SDA_USED=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | head -1 | awk '{print $3}')
-                DF_REMOTE_SDA1_SIZE=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/meta1" | awk '{print $2}')
-                DF_REMOTE_SDA1_AVL=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/meta1" | awk '{print $4}')
-                DF_REMOTE_SDA1_USED=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/meta1" | awk '{print $3}')
+                DF_REMOTE_SDA1_SIZE=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/sda1" | awk '{print $2}')
+                DF_REMOTE_SDA1_AVL=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/sda1" | awk '{print $4}')
+                DF_REMOTE_SDA1_USED=$(cat $PATH_SCRIPT/tmp/df_nodes.txt | grep "/mnt/sda1" | awk '{print $3}')
 
 
-                if [[ ! -z $META ]] && [[ ! -z $META1 ]]; then
+                if [[ ! -z $SDA ]] && [[ ! -z $SDA1 ]]; then
                         echo -e "$(date '+%Y-%m-%d %H:%M:%S') -- $HOSTNAME ($IP)\n\tSize\tUsed\tAvailable\tParted\n\t$DF_REMOTE_SDA_SIZE\t$DF_REMOTE_SDA_USED\t$DF_REMOTE_SDA_AVL\t\t/mnt/meta: $SDA%\n\t$DF_REMOTE_SDA1_SIZE\t$DF_REMOTE_SDA1_USED\t$DF_REMOTE_SDA1_AVL\t\t/mnt/meta1: $SDA1%\n" >> $PATH_SCRIPT/log/tnodes.log
                 else
                         removeipaddr $IP
                 fi
 
 
-                if [[ $META -ge $MAX_DF_SIZE_PERCENT ]] || [[ $META1 -ge $MAX_DF_SIZE_PERCENT ]]; then
+                if [[ $SDA -ge $MAX_DF_SIZE_PERCENT ]] || [[ $SDA1 -ge $MAX_DF_SIZE_PERCENT ]]; then
                         psql -h localhost -t -U $USER_DB -d $DB_SCHEME -c "UPDATE table_servers SET available = false WHERE ip = '$IP';" 2>&1 > /dev/null
                         logger_expire_store $HOSTNAME $IP $DF_REMOTE_SDA_AVL $DF_REMOTE_SDA_USED $SDA $DF_REMOTE_SDA1_AVL $DF_REMOTE_SDA1_USED $SDA1
                         removeipaddr $IP
